@@ -1,8 +1,8 @@
 
 # About the project
 
-*Write a short description about the course and add a link to your github repository here. This is an R markdown (.Rmd) file so you can use R markdown syntax. See the 'Useful links' page in the mooc area (chapter 1) for instructions.*
+Reproductible Data Scienceeee~ wohoo. Something something.
 
 ## Introduction to Open Data Science 2018
 
-### https://smooshi.github.io/IODS-project/
+[Link to Github Repo](https://github.com/smooshi/IODS-project)

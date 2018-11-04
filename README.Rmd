@@ -1,0 +1,10 @@
+---
+title: "README"
+author: "smooshi"
+output: github_document
+---
+
+# Course Diary:
+
+[Link to Diary](https://smooshi.github.io/IODS-project/)
+
