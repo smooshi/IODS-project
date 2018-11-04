@@ -4,12 +4,14 @@
 
 Data wrangling exersize is in the data folder.
 
+This dataset contains information about students and their attitude/strategy towards learning and their exam scores.
 ```{r}
 data <- read.table("~/GitHub/IODS-project/data/learning2014.csv", header = TRUE, sep = ",")
 head(data)
 names(data)
 dim(data)
 ```
+There are 7 variables and 183 people. 
 
 ##Task 2
 ```{r}
