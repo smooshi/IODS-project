@@ -1,7 +1,99 @@
-# Insert chapter 2 title here
+# R Exercise 2 Analysis
 
-*Describe the work you have done this week and summarize your learning.*
+##Task 1
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using  
+Data wrangling exersize is in the data folder.
+
+```{r}
+data <- read.table("~/GitHub/IODS-project/data/learning2014.csv", header = TRUE, sep = ",")
+head(data)
+names(data)
+dim(data)
+```
+
+##Task 2
+```{r}
+library(ggplot2)
+summary(data)
+```
+Summary of all variables. Dataset is about students (Age, Gender) and their attitudes towards learning (Attitude, Deep, Stra, Surf) and their combined scores (Points). I will use the graphical library ggplot to do graphics.
+
+```{r}
+#Pie chart of gender
+ggplot(data, aes(x=factor(1), fill = factor(Gender)))+geom_bar(width=1)+coord_polar(theta="y")+theme_void()
+```
+There are 122 females and 61 males.
+
+```{r}
+#Histogram of Age
+qplot(data$Age, geom="histogram")+labs(title="Histogram for Age") +
+  labs(x="Age", y="Count")
+```
+Age distribution is slanted, there are a lot more people in their 20's than other people.
+
+```{r}
+#Boxplot of gender and points
+
+ggplot(data, aes(x=Gender, y=Points, fill=Gender)) + 
+  geom_boxplot()
+```
+It looks like Males have slightly more points by average than females.
+
+Points and Attitude:
+
+```{r}
+#Linear regression of Attitude and Points
+ggplot(data, aes(x = Attitude, y = Points)) + geom_point() + geom_smooth(method="lm")+labs(title="Linear regression of attitude and points")
+```
+
+Scatter plot matrix:
+```{r}
+library(GGally)
+p <- ggpairs(data, mapping = aes(col=Gender, alpha=0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+```
+
+##Task 3 & 4
+
+###Task 3
+Target: Points
+
+```{r}
+linear <- lm(Points ~ Gender+Age+Attitude, data=data)
+summary(linear)
+```
+
+
+This correlation is not significant for gender and age, but is for attitude. 
+
+```{r}
+summary(lm(Points~Attitude+Stra+Surf, data=data))
+```
+
+Linear regression is significant for Attitude and Stra, but not Surf
+
+###Task 4
+
+```{r}
+summary(lm(Points~Attitude+Stra+Deep, data=data))
+```
+Attitude, Strategy, and Deep understanding during studying explains exam results the best. Here multiple linear regression and all subregressions are significant. 
+
+R-squared is a statistical measure of how close the data are to the fitted regression line. Multiple R-squared is low and that says that these variables do not explain the whole variation in exam points.
+
+```{r}
+ggplot(data, aes(x=Points, y=Attitude+Stra+Deep))+geom_point()+geom_smooth(method="lm")+labs(title="Linear regression of  points and attitude+stra+deep")
+```
+
+In the picture there's slight positive correlation between Points and Attitude+Stra+Deep. While Points correlates with Attitude+Stra+Deep, those variables do not explain all variation in Points.
+
+##Task 5
+
+```{r}
+linear <- lm(Points~Attitude+Stra+Deep, data=data)
+par(mfrow = c(2,2))
+plot(linear, which = c(1,2,5))
+```
+Q-Q Plot shows that the left tail of the distribution does not follow normalcy. It deviates a lot.
+There is also high spread in residuals, but they look mostly grouped linearly.
+There is one higher leverage outlier in the data.
