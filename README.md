@@ -1,6 +1,6 @@
 README
 ================
-smooshi
+smooshi // Lisa
 
 Course Diary:
 =============
