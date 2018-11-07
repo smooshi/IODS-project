@@ -11,6 +11,7 @@ head(data)
 names(data)
 dim(data)
 ```
+
 There are 7 variables and 183 people. 
 
 ##Task 2
@@ -18,12 +19,16 @@ There are 7 variables and 183 people.
 library(ggplot2)
 summary(data)
 ```
-Summary of all variables. Dataset is about students (Age, Gender) and their attitudes towards learning (Attitude, Deep, Stra, Surf) and their combined scores (Points). I will use the graphical library ggplot to do graphics.
+
+Summary of all variables. Dataset is about students (Age, Gender) and their attitudes towards learning (Attitude, Deep, Stra, Surf) and their combined scores (Points). Combination stats like Deep/Surf/Stra combine several questions from the questionairre togetger.
+
+I will use the graphical library ggplot to do graphics.
 
 ```{r}
 #Pie chart of gender
-ggplot(data, aes(x=factor(1), fill = factor(Gender)))+geom_bar(width=1)+coord_polar(theta="y")+theme_void()
+ggplot(data, aes(x=factor(1), fill = factor(Gender)))+geom_bar(width=1)+coord_polar(theta="y")+theme_void()+labs(title="Gender")
 ```
+
 There are 122 females and 61 males.
 
 ```{r}
@@ -31,22 +36,28 @@ There are 122 females and 61 males.
 qplot(data$Age, geom="histogram")+labs(title="Histogram for Age") +
   labs(x="Age", y="Count")
 ```
+
 Age distribution is slanted, there are a lot more people in their 20's than other people.
 
 ```{r}
 #Boxplot of gender and points
 
 ggplot(data, aes(x=Gender, y=Points, fill=Gender)) + 
-  geom_boxplot()
+  geom_boxplot()+labs(title="Gender and amount of points")
 ```
-It looks like Males have slightly more points by average than females.
+
+It looks like Males have slightly more points by average than females (black bar in the middle is average), but the difference might not be significant. Also there's a lot more females (122) than males so that might affect this.
 
 Points and Attitude:
 
 ```{r}
 #Linear regression of Attitude and Points
 ggplot(data, aes(x = Attitude, y = Points)) + geom_point() + geom_smooth(method="lm")+labs(title="Linear regression of attitude and points")
+cor.test(data$Attitude, data$Points, method="pearson")
 ```
+
+Test of simple linear regression. Pearson correlation is significant and low positive, 0.339. (Pearson correlation assumes normalcy, not sure if it applies here)
+
 
 Scatter plot matrix:
 ```{r}
@@ -54,6 +65,8 @@ library(GGally)
 p <- ggpairs(data, mapping = aes(col=Gender, alpha=0.3), lower = list(combo = wrap("facethist", bins = 20)))
 p
 ```
+
+Compilation of all sorts of different statistics.
 
 ##Task 3 & 4
 
@@ -66,22 +79,26 @@ summary(linear)
 ```
 
 
-This correlation is not significant for gender and age, but is for attitude. 
+This correlation is not significant for gender and age, but is for attitude. I will keep Attitude and remove Gender, Age.
+
 
 ```{r}
 summary(lm(Points~Attitude+Stra+Surf, data=data))
 ```
 
-Linear regression is significant for Attitude and Stra, but not Surf
+
+Linear regression is significant for Attitude and Stra, but not Surf. Remove Surf.
 
 ###Task 4
 
 ```{r}
 summary(lm(Points~Attitude+Stra+Deep, data=data))
 ```
-Attitude, Strategy, and Deep understanding during studying explains exam results the best. Here multiple linear regression and all subregressions are significant. 
+
+Attitude, Strategy, and trying to get a Deep understanding of the subject during studying explains exam results the best. Here multiple linear regression and all subregressions are significant. 
 
 R-squared is a statistical measure of how close the data are to the fitted regression line. Multiple R-squared is low and that says that these variables do not explain the whole variation in exam points.
+
 
 ```{r}
 ggplot(data, aes(x=Points, y=Attitude+Stra+Deep))+geom_point()+geom_smooth(method="lm")+labs(title="Linear regression of  points and attitude+stra+deep")
@@ -96,6 +113,9 @@ linear <- lm(Points~Attitude+Stra+Deep, data=data)
 par(mfrow = c(2,2))
 plot(linear, which = c(1,2,5))
 ```
-Q-Q Plot shows that the left tail of the distribution does not follow normalcy. It deviates a lot.
+
+Q-Q Plot shows that the left tail of the distribution does not follow normalcy. It deviates a lot. I assume left tail contains all the "0 points" people, who answered the questions but possibly didn't show up for the exam (0 points.) These people should be in a real analysis of the data.
+
 There is also high spread in residuals, but they look mostly grouped linearly.
-There is one higher leverage outlier in the data.
+
+There is one higher leverage outlier in the data at 0.10 Leverage, while others are mostly between 0.0-0.04.

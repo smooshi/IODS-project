@@ -1,0 +1,13 @@
+---
+author: "smooshi"
+date: "2018 M11 6"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Chapter 3
+
+Here be dragons.

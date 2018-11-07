@@ -1,7 +1,7 @@
 
 # About the project
 
-Reproductible Data Scienceeee~ wohoo. Something something.
+I'm a PhD student in Genetics/proteonomics. I'm taking this course to refresh my R skills and learn some new stuff.
 
 ## Introduction to Open Data Science 2018
 
