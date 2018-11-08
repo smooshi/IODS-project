@@ -10,4 +10,125 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Chapter 3
 
-Here be dragons.
+##Task 1-2
+```{r}
+alc <- read.table("~/GitHub/IODS-project/data/alc.csv", header = TRUE, sep = ",")
+names(alc)
+```
+
+This is a dataset made from two Portuguese school data attributes include descriptors of students (like age, sex, family size, profession of mom and dad, grades etc) and alcohol usage (Dalc = workday alcohol consumption, Walc = weekend alcohol consumption). Alc_use combines Dalc and Walk, and high_use is alcohol usage that's higher than 2 (1- very low, 5- very high). 
+
+##Task 3-4
+
+###Age
+
+Legal drinking age in Portugal is 16 for beer/cider and 18 for hard liquor. I would hope that there are significantly more high alchohol users in students that are of legal drinking age.
+
+```{r}
+library(ggplot2)
+alc$legal <- ifelse(alc$age >= 16, TRUE, FALSE)
+ggplot(data = alc, aes(x=high_use))+geom_bar()+facet_wrap("legal")+geom_text(stat='count', aes(label=..count..))
+
+#Students under legal drinking age that are high users
+18/(63+18)
+
+#Students over legal drinking age that are high users
+96/(205+96)
+```
+
+Here groupings are based on is the student legal drinking age (TRUE/FALSE). The graph shows that there are much more responders that are of legal drinking age. Percentage of students that are high users and under the legal drinking age is 22% and number of students that are high users and over the legal drinking age is 32%. There's a noticable difference.
+
+### Go out
+
+26 goout - going out with friends (numeric: from 1 - very low to 5 - very high) 
+
+Assumption: Kids that go out alot with their friends are more likely to drink than those who don't.
+
+```{r}
+ggplot(data = alc, aes(x=high_use))+geom_bar()+facet_wrap("goout")+geom_text(stat='count', aes(label=..count..))
+
+ftable(table(alc$high_use, alc$goout))
+```
+
+Here it's very obvious, kids that go out a lot drink a lot more than kids that don't go out much.
+
+
+
+### Grades
+
+Assumption: Kids who get more than half the points in every grade (First period, second period, final grade) are less likely to drink a lot than kids than don't even manage half the points.
+
+```{r}
+alc$grades <- ifelse(alc$G1 >= 11 & alc$G2 >= 11 & alc$G3 >=11, TRUE, FALSE)
+ggplot(data = alc, aes(x=high_use))+geom_bar()+facet_wrap("grades")+geom_text(stat='count', aes(label=..count..))
+
+#false
+66/(66+118)
+
+#true
+48/(48+150)
+```
+
+This looks like it might be significant, kids that get more than half the points are 24% high alcohol users and kids that don't are 35.9% high alchohol users.
+
+###Studytime
+
+Assumption: Kids who spend more time studying drink less.
+
+```{r}
+ggplot(data = alc, aes(x=high_use))+geom_bar()+facet_wrap("studytime")+geom_text(stat='count', aes(label=..count..))
+
+ftable(table(alc$high_use, alc$studytime))
+
+#1 < 2hours
+42/(42+58)
+
+#2 2 to 5 hours
+60/(60+135)
+
+#3 5 to 10 hours
+8/(8+52)
+
+#4 over 10 hours
+4/(4+23)
+```
+
+Here it's pretty clear, kids that study more than 5 hours a week are much less likely to be drinkers (14.8%, 13.3%) and kids who study less are much more likely to be heavy drinkers ( 30.7% and 42%). Especially if the kids spend almost no time studying (<2).
+
+##Task 5
+
+###Age
+
+```{r}
+m <- glm(high_use ~ legal, data = alc, family = "binomial")
+summary(m)
+coef(m)
+confint(m)
+```
+
+### Go out
+
+```{r}
+m <- glm(high_use ~ goout, data = alc, family = "binomial")
+summary(m)
+coef(m)
+confint(m)
+```
+
+###Grades
+
+```{r}
+m <- glm(high_use ~ grades, data = alc, family = "binomial")
+summary(m)
+coef(m)
+confint(m)
+```
+
+###Studytime
+
+```{r}
+m <- glm(high_use ~ studytime, data = alc, family = "binomial")
+summary(m)
+coef(m)
+confint(m)
+```
