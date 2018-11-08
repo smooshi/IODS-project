@@ -6,7 +6,7 @@ Data wrangling exersize is in the data folder.
 
 This dataset contains information about students and their attitude/strategy towards learning and their exam scores.
 ```{r}
-data <- read.table("~/GitHub/IODS-project/data/learning2014.csv", header = TRUE, sep = ",")
+data <- read.table("~/IODS-project/data/learning2014.csv", header = TRUE, sep = ",")
 head(data)
 names(data)
 dim(data)
@@ -21,6 +21,13 @@ summary(data)
 ```
 
 Summary of all variables. Dataset is about students (Age, Gender) and their attitudes towards learning (Attitude, Deep, Stra, Surf) and their combined scores (Points). Combination stats like Deep/Surf/Stra combine several questions from the questionairre togetger.
+
+Deep is a combination of questionaire questions that reflect "Deep Approach" to learning. (Seeking Meaning, Relating Ideas, Use of Evidence)
+
+Surf is a "Surface Approach" to learning. (Lack of Purpose, Unrelated Memorizing, Syllabus-boundness)
+
+Stra is a "Strategic Approach" to learning. (Organized Studying, Time Management)
+
 
 I will use the graphical library ggplot to do graphics.
 
@@ -37,7 +44,7 @@ qplot(data$Age, geom="histogram")+labs(title="Histogram for Age") +
   labs(x="Age", y="Count")
 ```
 
-Age distribution is slanted, there are a lot more people in their 20's than other people.
+Age distribution is slanted, there are a lot more people in their 20's than other people. Age groups cannot really be compared directly because the amount of people are so different.
 
 ```{r}
 #Boxplot of gender and points
@@ -95,16 +102,16 @@ Linear regression is significant for Attitude and Stra, but not Surf. Remove Sur
 summary(lm(Points~Attitude+Stra+Deep, data=data))
 ```
 
-Attitude, Strategy, and trying to get a Deep understanding of the subject during studying explains exam results the best. Here multiple linear regression and all subregressions are significant. 
+Attitude, Strategy, and trying to get a Deep understanding of the subject during studying explains exam results the best. Here multiple linear regression and all subregressions are significant. So best predictors of a good exam score is the overall attitude of the student and study habits that aim at: Seeking Meaning, Relating Ideas, Use of Evidence, Organized Studying, and Time Management.
 
-R-squared is a statistical measure of how close the data are to the fitted regression line. Multiple R-squared is low and that says that these variables do not explain the whole variation in exam points.
+R-squared is a statistical measure of how close the data are to the fitted regression line. If the data formed linearly on the regression line, R-squared would be 1 or close to 1. Multiple R-squared is low and that says that these variables do not explain the whole variation in exam points. There are other factors that affect the distribution/orientation of the data.
 
 
 ```{r}
 ggplot(data, aes(x=Points, y=Attitude+Stra+Deep))+geom_point()+geom_smooth(method="lm")+labs(title="Linear regression of  points and attitude+stra+deep")
 ```
 
-In the picture there's slight positive correlation between Points and Attitude+Stra+Deep. While Points correlates with Attitude+Stra+Deep, those variables do not explain all variation in Points.
+In the picture there's slight positive linear correlation between Points and Attitude+Stra+Deep, meaning higher scores for an individual in Attitude+Stra+Deep generally mean there's also a higher Points. While Points correlates with Attitude+Stra+Deep, those variables do not explain all variation in Points. Other factors that could affect points might be how familiar the student is with the course material previously and how much absolute time they spent on studying.
 
 ##Task 5
 
