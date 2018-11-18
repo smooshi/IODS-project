@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ##Task 1-2
 ```{r}
+setwd("~/GitHub/IODS-project/data")
 alc <- read.table("~/GitHub/IODS-project/data/alc.csv", header = TRUE, sep = ",")
 names(alc)
 ```
@@ -106,6 +107,8 @@ coef(m)
 confint(m)
 ```
 
+Age is not significant factor in 95% statistical significance, but would be 90% statistical significance.
+
 ### Go out
 
 ```{r}
@@ -114,6 +117,8 @@ summary(m)
 coef(m)
 confint(m)
 ```
+
+How often kids go "out" with their friends is significant factor that explains high alcohol use.
 
 ###Grades
 
@@ -124,6 +129,8 @@ coef(m)
 confint(m)
 ```
 
+Bad grades mean kid is more likely to be a high alcohol user and higher grades mean low chance.
+
 ###Studytime
 
 ```{r}
@@ -132,3 +139,90 @@ summary(m)
 coef(m)
 confint(m)
 ```
+
+If a kid spends a lot tipe studying they are less likely to be high alchohol users.
+
+##Exersize 6
+
+Go out, Grades, STudytime
+
+```{r}
+library(dplyr)
+m <- glm(high_use ~ studytime+grades+goout, data = alc, family = "binomial")
+summary(m)
+coef(m)
+confint(m)
+p <- predict(m, type="response")
+# add the predicted probabilities to 'alc'
+alc <- mutate(alc, probability = p)
+
+# use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability > 0.5)
+
+table(high_use = alc$high_use, prediction = alc$prediction) %>% prop.table() %>% addmargins()
+
+g <- ggplot(alc, aes(x = high_use, y = probability, col=prediction))
+
+g + geom_point()
+
+# define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc$high_use, prob = alc$probability)
+```
+
+There's a 25% chance of a wrong prediction, so I don't think my variables are a excellent predictor. It would predict "mostly", but there's such a big chance of error it's not good/usable. Also there's probably a lot of "overlap" between go out and studytime and studytime and grades... Different predictors would have maybe captured more of the actual problem?
+
+
+##Exersize 7
+
+```{r}
+library(boot)
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 10)
+
+# average number of wrong predictions in the cross validation
+cv$delta[1]
+
+```
+
+Datacamp model was 0.26 and mine is 0.25... SO they are pretty much the same?
+
+Trying to get a better model:
+```{r}
+m <- glm(high_use ~ studytime+failures+goout+absences+sex, data = alc, family = "binomial")
+summary(m)
+coef(m)
+confint(m)
+p <- predict(m, type="response")
+# add the predicted probabilities to 'alc'
+alc <- mutate(alc, probability = p)
+
+# use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability > 0.5)
+
+table(high_use = alc$high_use, prediction = alc$prediction) %>% prop.table() %>% addmargins()
+
+g <- ggplot(alc, aes(x = high_use, y = probability, col=prediction))
+
+g + geom_point()
+
+# define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc$high_use, prob = alc$probability)
+
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 10)
+
+# average number of wrong predictions in the cross validation
+cv$delta[1]
+```
+
+With studytime+failures+goout+absences+sex it drops to 22.5... So maybe that's good enough!

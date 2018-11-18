@@ -6,7 +6,8 @@ Data wrangling exersize is in the data folder.
 
 This dataset contains information about students and their attitude/strategy towards learning and their exam scores.
 ```{r}
-data <- read.table("~/IODS-project/data/learning2014.csv", header = TRUE, sep = ",")
+setwd("~/GitHub/IODS-project/data")
+data <- read.table("learning2014.csv", header = TRUE, sep = ",")
 head(data)
 names(data)
 dim(data)
