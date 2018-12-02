@@ -10,9 +10,138 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(GGally)
+library(corrplot)
 ```
 
 # Chapter 5
 
 
 ## Task 1
+
+```{r}
+human <- read.table("~/GitHub/IODS-project/data/human.csv", header = TRUE, row.names= 1, sep = ",")
+
+# visualize the 'human_' variables
+ggpairs(human)
+
+# compute the correlation matrix and visualize it with corrplot
+cor(human) %>% corrplot()
+
+summary(human)
+```
+
+In general female education correlates slightly to moderately positively with "good things" like Life Expectancy and negatively with "bad things" like Maternal Mortality and child pregnancy. Maternal MOrtality in general is very low, but overrepresented in some countries. Maternal Mortality in Europe is generally < 10, but in the some African countries it is very high like Sierra Leone (max, 1100) and Chad (980). Many traits show this same pattern where majority of Western Countries are grouped around the peak and there's a second smaller "bump" where Developing Countries are. In general most of these trains look good (as in life expectancy is a right tilted distribution, Adolescent birth rate is a left tilted distribution) except parlamentary representation that is left tilted (women are underrepresented in most countries).
+
+## Task 2 : Principle Component Analysis
+
+The original variables of data might contain too much information for representing the phenomenon of interest, so we have to reduce dimensions to "most essential dimensions". We use "Principle component analysis" or PCA, it is an unsupervised method. PCA is sensitive to the relative scaling of the original features and assumes that features with larger viarance are more important that features with smaller variance. Data should be standardized before using PCA.
+
+First Principle Component captures the maximum amount of variance from features in the original data.
+
+Second Principle component is orthogonal to the first and captures maximum amount of variability left. 
+
+###Not standardized:
+```{r}
+#perform principal component analysis (with the SVD method)
+pca_human <- prcomp(human)
+
+# draw a biplot
+biplot(pca_human, cex = c(0.8, 1), col = c("grey40", "deeppink2"))
+```
+This does not work at all... Standardization is very important. There is not much that can be interpreted here and there's many errors. Arrows don't seem to work and the only explaining thing is that GNI explains left grouping and all other variables group right. This is not the same as in corrplot, where GNI has a positive relationship with Life Expectancy and Education Expected Years... This plot doesn't work.
+
+## Task 3 & 4
+
+### Standardized
+```{r}
+# standardize the variables
+human_std <- scale(human)
+
+# perform principal component analysis (with the SVD method)
+pca_human <- prcomp(human_std)
+
+# create and print out a summary of pca_human
+s <- summary(pca_human)
+s
+
+# rounded percetanges of variance captured by each PC
+pca_pr <- round(100*s$importance[2, ], digits = 1)
+
+# print out the percentages of variance
+pca_pr
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+
+# draw a biplot
+biplot(pca_human, cex = c(0.8, 1), col = c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
+
+56.1+16.5
+```
+
+After standardization we see a working plot where we can interpret relationships and groups. Correlations match the correlation seen in corrplot.
+
+Biplot is a way of visualizing two representations of the same data, biplot shows 1) Observations in a lower dimensional representation (scatter plot x and y) and 2) original features and their relationships with each other and the principal components (arrows). Angle of arrows can be interpreted as the correlation between features so that: small angle = high positive correlation and angle between arrow and PC-axis can be interpreted as the correlation between the two (Small angle = high positive correlation). Length of the arrows is proportional to the standard deviation of the features. 
+
+Here we see that the principle components explain 72.6% of the variation, so a lot. We also see the same correlations for the corrplot that Maternal Mortality/Adolescent Birthrate group countries towards the right (Developing Countries) and Female Education Indexes and Life expectancy group Countries to the left (European and other Developed Nations). There is strong negative correlation between left and right grouping classes and we can see also that Adolescent Birth Rate nad Maternal mortality correlate closely with eachother... and the same thing is true for the variables to the left. Lab Ratio (Paricipation in Labor male/female ratio) and Parliament (female representation) are in charge of most of the PC2 and only explain 16.5% of the variation. Absolutely clear groups don't really form and the majority of countries are middle and middle left, only some developing countries crealy separate towards the right. 
+
+## Task 5 Multiple Correspondance Analysis.
+
+Multiple Correspondance Analysis is also a dimensionality reduction method. It analyses the pattern of relationships between several categorical variables, but can also use continuous variables as supplementary variables. MCA use frequencies and can be used for text data.
+
+For categorical variables: Indicator Matrix (binary) or Burt Matrix (two-way cross tabulatin of all data). 
+
+Eigenvalues are variances and percentage of variances retained by each dimension.
+
+Individuals are usually the rows of the data, their coordinates, and contribution to the dimension.
+
+Categories are the coordinates and contribution of the variable categories.
+
+Categorical variables are the squared correlation between each variable and the dimensions.
+
+```{r}
+library(FactoMineR)
+library(tidyr)
+
+data(tea)
+
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
+
+# select the 'keep_columns' to create a new dataset
+tea_time <- select(tea, one_of(keep_columns))
+
+# look at the summaries and structure of the data
+summary(tea_time)
+str(tea_time)
+dim(tea_time)
+
+# visualize the dataset
+gather(tea_time) %>% ggplot(aes(value),theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))) + facet_wrap("key", scales = "free") + geom_bar()
+
+
+```
+
+300 tea consumers have answered a survey about their consumption of tea. The questions were about how they consume tea, how they think of tea and descriptive questions (sex, age, socio-professional category and sport practise). Except for the age, all the variables are categorical. The "how" answers to what type of tea people drink and "tea bag" seems most popular, the "How" answers to what people drink ther tea with and most commonly alone. People rarely drink tea at lunch. People put or don't put sugar in their tea 50/50. Most people drink Earl Grey, and mostly people drink their tea at a chain store. 
+
+###MCA
+
+```{r}
+# multiple correspondence analysis
+mca <- MCA(tea_time, graph = FALSE)
+
+# summary of the model
+summary(mca)
+
+# visualize MCA
+plot(mca, invisible=c("ind"), habillage="quali")
+```
+
+With the MCA we can see that some things group together. People that drink tea at a tea shop drink unpackaged tea and are more likely to drink green tea than others, where as people that drink tea in a chain store are most likely to drink it in a tea bag. Things that were 50/50 don't part from the middle of the MCA plot, so sugar/no sugar are in the middle. Also because almost everyone had their drink "Not lunch" it doesn't group anywhere... 
+
+###Other plots
+```{r}
+plotellipses(mca)
+```
+
+How the chosen columns spread out in the MCA.Here it's also visible that teashop+unpackaged group together. Also it's easier to see that it looks like that people that drink unpackaged tea in teashops mostly drink tea alone or with lemon. Less with milk and none or almost none (hard to see) with "other". Also this group is maybe mostly drinking "not at lunch".

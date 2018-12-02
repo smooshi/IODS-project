@@ -15,20 +15,22 @@ str(gii)
 summary(gii)
 dim(gii)
 
-colnames(gii)[colnames(gii)=="Gender.Inequality.Index..GII"] <- "GII"
-colnames(gii)[colnames(gii)=="Maternal.Mortality.Ratio"] <- "MaternalMortality"
+colnames(gii)[colnames(gii)=="Gender.Inequality.Index..GII."] <- "GII"
+colnames(gii)[colnames(gii)=="Maternal.Mortality.Ratio"] <- "MatMortality"
 colnames(gii)[colnames(gii)=="Population.with.Secondary.Education..Female."] <- "Edu2F"
 colnames(gii)[colnames(gii)=="Labour.Force.Participation.Rate..Female."] <- "LabF"
-colnames(gii)[colnames(gii)=="Percent.Representation.in.Parliament"] <- "Parliament"
+colnames(gii)[colnames(gii)=="Percent.Representation.in.Parliament"] <- "ParliamentF"
 colnames(gii)[colnames(gii)=="Population.with.Secondary.Education..Male."] <- "Edu2M"
 colnames(gii)[colnames(gii)=="Labour.Force.Participation.Rate..Male."] <- "LabM"
+colnames(gii)[colnames(gii)=="Adolescent.Birth.Rate"] <- "AdoBirth"
 
 colnames(hd)[colnames(hd)=="Human.Development.Index..HDI."] <- "HDI"
-colnames(hd)[colnames(hd)=="Expected.Years.of.Education"] <- "EYE"
+colnames(hd)[colnames(hd)=="Expected.Years.of.Education"] <- "EduExp"
 colnames(hd)[colnames(hd)=="Gross.National.Income..GNI..per.Capita"] <- "GNI"
 colnames(hd)[colnames(hd)=="Life.Expectancy.at.Birth"] <- "LifeExpectancy"
 colnames(hd)[colnames(hd)=="Mean.Years.of.Education"] <- "EducationYears"
 colnames(hd)[colnames(hd)=="GNI.per.Capita.Rank.Minus.HDI.Rank"] <- "GNI-HDI"
+
 
 gii["edu2Ratio"] <- gii["Edu2F"]/gii["Edu2M"]
 gii["LabRatio"] <- gii["LabF"]/gii["LabM"]
@@ -39,10 +41,10 @@ joined_data <- inner_join(hd, gii, by="Country")
 human <- joined_data
 
 #Make GNI numeric
-str_replace(human$GNI, pattern=",", replace ="") %>% as.numeric()
+human$GNI <- str_replace(human$GNI, pattern=",", replace ="") %>% as.numeric()
 
 #Remove columns you don't need
-keep <- c("Country", "Edu2F", "LabRatio", "LifeExpectancy", "EYE", "GNI", "MaternalMortality", "Adolescent.Birth.Rate", "Parliament")
+keep <- c("Country", "edu2Ratio", "LabRatio", "LifeExpectancy", "EduExp", "GNI", "MatMortality", "AdoBirth", "ParliamentF")
 
 # select the 'keep' columns
 human <- select(human, one_of(keep))
@@ -66,8 +68,7 @@ human_ <- human_[1:last, ]
 rownames(human_) <- human_$Country
 
 #remove Country
-keep <- c("Edu2F", "LabRatio", "LifeExpectancy", "EYE", "GNI", "MaternalMortality", "Adolescent.Birth.Rate", "Parliament")
-human <- select(human_, one_of(keep))
+human <- select(human_, -Country)
 
 #Write
 write.csv(human, file="~/GitHub/IODS-project/data/human.csv", row.names = TRUE)
