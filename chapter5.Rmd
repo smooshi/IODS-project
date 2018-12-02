@@ -1,0 +1,18 @@
+---
+title: "Chapter5"
+author: "smooshi"
+date: "2018 M12 2"
+output: html_document
+---
+
+```{r setup5, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+# Chapter 5
+
+
+## Task 1
