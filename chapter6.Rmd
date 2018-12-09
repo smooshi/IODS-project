@@ -1,0 +1,142 @@
+---
+title: "Chapter6"
+author: "smooshi"
+date: "2018 M12 9"
+output: html_document
+---
+
+```{r setup6, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+#Chapter 6
+
+```{r}
+ratsL <- read.table("~/GitHub/IODS-project/data/rats.csv", header = TRUE, row.names= 1, sep = ",")
+BPRSL <- read.table("~/GitHub/IODS-project/data/bprs.csv", header = TRUE, row.names= 1, sep = ",")
+
+BPRSL <-  BPRS %>% gather(key = weeks, value = bprs, -treatment, -subject)
+ratsL <-  rats %>% gather(key = wd, value = rats, -Group, -ID)
+
+BPRSL <-  BPRSL %>% mutate(week = as.integer(substr(weeks,5,5)))
+ratsL <-  ratsL %>% mutate(wd = as.integer(substr(wd,3,5)))
+
+```
+
+##BPRS
+
+### Data at first
+```{r}
+summary(BPRSL)
+
+ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(BPRSL$bprs), max(BPRSL$bprs)))
+```
+
+
+Data before stanardization.
+
+### Normalized data 
+```{r}
+BPRSL <- BPRSL %>%
+  group_by(week) %>%
+  mutate(stdbprs = (bprs - mean(bprs))/sd(bprs) ) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(BPRSL)
+
+# Plot again with the standardised bprs
+ggplot(BPRSL, aes(x = week, y = stdbprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  scale_y_continuous(name = "standardized bprs")
+```
+
+Data after standardization. The plot suggests the presence of some possible outliers and indicates again the general decline in BPRS values over the eight weeks of the study in both treatment groups.
+
+### Mean response profiles:
+```{r}
+# Number of weeks, baseline (week 0) included
+n <- BPRSL$week %>% unique() %>% length()
+
+# Summary data with mean and standard error of bprs by treatment and week 
+BPRSS <- BPRSL %>%
+  group_by(treatment, week) %>%
+  summarise( mean = mean(bprs), se = sd(bprs)/sqrt(n) ) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(BPRSS)
+
+# Plot the mean profiles
+ggplot(BPRSS, aes(x = week, y = mean, linetype = treatment, shape = treatment)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2)) +
+  geom_point(size=3) +
+  scale_shape_manual(values = c(1,2)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=0.3) +
+  theme(legend.position = c(0.8,0.8)) +
+  scale_y_continuous(name = "mean(bprs) +/- se(bprs)")
+```
+
+We see BPRS values decrease in both treatment groups over time. However treatment 2 bumps in the end.
+
+### Remove Outliers
+
+```{r}
+# Create a summary data by treatment and subject with mean as the summary variable (ignoring baseline week 0).
+BPRSL8S <- BPRSL %>%
+  filter(week > 0) %>%
+  group_by(treatment, subject) %>%
+  summarise( mean=mean(bprs) ) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(BPRSL8S)
+
+# Draw a boxplot of the mean versus treatment
+ggplot(BPRSL8S, aes(x = treatment, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(bprs), weeks 1-8")
+
+# Create a new data by filtering the outlier and adjust the ggplot code the draw the plot again with the new data
+BPRSL8S1 <- filter(BPRSL8S, mean < 60)
+```
+
+Outlier is seen as a black dot above boxplots. It is around ~70, but I removed everything over 60 (over the whiskers of the boxplots)
+
+Plot after removal:
+
+```{r}
+ggplot(BPRSL8S1, aes(x = treatment, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(bprs), weeks 1-8")
+```
+
+###Anova:
+
+```{r}
+# Perform a two-sample t-test
+t.test(mean ~ treatment, data = BPRSL8S1, var.equal = TRUE)
+
+# Add the baseline from the original data as a new variable to the summary data
+BPRSL8S2 <- BPRSL8S %>%
+  mutate(baseline = BPRS$week0)
+
+# Fit the linear model with the mean as the response 
+fit <- lm(mean ~ baseline+treatment, data = BPRSL8S2)
+
+# Compute the analysis of variance table for the fitted model with anova()
+anova(fit)
+```
