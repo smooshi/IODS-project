@@ -15,15 +15,26 @@ library(tidyr)
 #Chapter 6
 
 ```{r}
-ratsL <- read.table("~/GitHub/IODS-project/data/rats.csv", header = TRUE, row.names= 1, sep = ",")
-BPRSL <- read.table("~/GitHub/IODS-project/data/bprs.csv", header = TRUE, row.names= 1, sep = ",")
+BPRS <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt", sep=" ", header=T)
+rats <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt", sep="\t", header=T)
 
+#Factorize
+BPRS$treatment <- factor(BPRS$treatment)
+BPRS$subject <- factor(BPRS$subject)
+rats$Group <- factor(rats$Group)
+rats$ID <- factor(rats$ID)
+
+#Long
 BPRSL <-  BPRS %>% gather(key = weeks, value = bprs, -treatment, -subject)
-ratsL <-  rats %>% gather(key = wd, value = rats, -Group, -ID)
-
+#Extract week/wd
 BPRSL <-  BPRSL %>% mutate(week = as.integer(substr(weeks,5,5)))
-ratsL <-  ratsL %>% mutate(wd = as.integer(substr(wd,3,5)))
 
+ratsL <-  rats %>% gather(key = WD, value = Weight, -ID, -Group)  %>%
+  mutate(Time = as.integer(substr(WD,3,4))) 
+
+
+glimpse(ratsL)
+glimpse(BPRSL)
 ```
 
 ##BPRS
@@ -140,3 +151,78 @@ fit <- lm(mean ~ baseline+treatment, data = BPRSL8S2)
 # Compute the analysis of variance table for the fitted model with anova()
 anova(fit)
 ```
+
+T-test shows no significant difference between treatments, but when baseline week0 is incorporated we see that baseline BPRS is strongly related to the BPRS values after treatment... But treatment is still not significant.
+
+## Rats
+
+```{r}
+ggplot(ratsL, aes(x = Time, y = Weight, group = ID)) +
+  geom_line(aes(linetype = Group)) + scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 10)) + scale_y_continuous(name = "Weight (grams)") + theme(legend.position= "top")
+```
+
+
+Rats in groups 2 and 3 look like they're gaining weight. Especially group 2? And also repeated measures of weight are not independant of each other.
+
+###Linear regression
+
+```{r}
+# create a regression model RATS_reg
+RATS_reg <- lm(Weight ~ Time+Group, data=ratsL)
+
+# print out a summary of the model
+summary(RATS_reg)
+
+# access library lme4
+library(lme4)
+
+# Create a random intercept model
+RATS_ref <- lmer(Weight ~ Time + Group + (1 | ID), data = ratsL, REML = FALSE)
+
+# create a random intercept and random slope model
+RATS_ref1 <- lmer(Weight ~ Time + Group + (Time | ID), data = ratsL, REML = FALSE)
+
+# print a summary of the model
+summary(RATS_ref1)
+
+# perform an ANOVA test on the two models
+anova(RATS_ref1, RATS_ref)
+
+# create a random intercept and random slope model
+RATS_ref2 <- lmer(Weight ~ Time * Group + (Time | ID), data = ratsL, REML = FALSE)
+
+# print a summary of the model
+summary(RATS_ref2)
+
+# perform an ANOVA test on the two models
+anova(RATS_ref2, RATS_ref1)
+
+# draw the plot of RATSL
+ggplot(ratsL, aes(x = Time, y = Weight, group = ID)) +
+  geom_line(aes(linetype = Group)) +
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 20)) +
+  scale_y_continuous(name = "Observed weight (grams)") +
+  theme(legend.position = "top")
+
+# Create a vector of the fitted values
+Fitted <- fitted(RATS_ref2)
+
+# Create a new column fitted to RATSL
+RATSL <- ratsL %>%
+  mutate(Fitted)
+
+# draw the plot of RATSL
+ggplot(RATSL, aes(x = Time, y = Fitted, group = ID)) +
+  geom_line(aes(linetype = Group)) +
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 20)) +
+  scale_y_continuous(name = "Fitted weight (grams)") +
+  theme(legend.position = "top")
+```
+
+The RATS_ref model assumes independence of the repeated measures of weight, and this assumption is highly unlikely. In further analysis the weight is considered dependant to previous weight. 
+
+The estimated regression parameters for the interaction indicate that the growth rate slopes are considerably higher for rats  in  group  2  than  for  rats  in  group  1  but  less  so  when comparing  group  3 rats  with  those  in  group  1. 
+
+We  can  find  the  fitted  values  from  the  interaction  model  and  plot  the
+fitted growth rates for each rat.  This graphic underlines how well the interaction model fits
+the observed data
